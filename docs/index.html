@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Tetris — C++/SDL2 implementation compiled to WebAssembly. Play in your browser." />
+    <meta property="og:title" content="🎮 Tetris (WASM)" />
+    <meta property="og:description" content="Classic Tetris written in C++/SDL2, running in your browser via WebAssembly." />
+    <meta property="og:type" content="website" />
+    <title>🎮 Tetris</title>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0d0d0d;
+            color: #e6e6e6;
+            line-height: 1.5;
+        }
+        .container { max-width: 880px; margin: 0 auto; padding: 24px 16px; }
+        h1 { font-size: 1.8rem; margin: 0 0 8px; }
+        h2 { font-size: 1.2rem; margin-top: 32px; }
+        a { color: #7cc; }
+        .game-frame {
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            max-height: 75vh;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            background: #000;
+            display: block;
+        }
+        .controls-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        .controls-table th, .controls-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #222;
+            text-align: left;
+        }
+        .controls-table th { color: #aaa; font-weight: 500; }
+        kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #1c1c1c;
+            border: 1px solid #333;
+            border-radius: 3px;
+            font-family: ui-monospace, monospace;
+            font-size: 0.85em;
+        }
+        .loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+        }
+        .frame-wrap { position: relative; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Tetris</h1>
+        <p>
+            Classic Tetris written in C++ with SDL2, compiled to WebAssembly and running directly in your browser.
+            <a href="https://github.com/calebe94/tetris" target="_blank" rel="noopener noreferrer">View source on GitHub →</a>
+        </p>
+
+        <div class="frame-wrap">
+            <iframe
+                class="game-frame"
+                src="wasm/index.html"
+                title="Tetris game"
+                allow="autoplay"
+                loading="eager"
+            ></iframe>
+        </div>
+
+        <h2>Controls</h2>
+        <table class="controls-table">
+            <thead>
+                <tr><th>Key</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>←</kbd></td><td>Move left</td></tr>
+                <tr><td><kbd>→</kbd></td><td>Move right</td></tr>
+                <tr><td><kbd>↓</kbd></td><td>Soft drop</td></tr>
+                <tr><td><kbd>↑</kbd> / <kbd>Space</kbd></td><td>Rotate</td></tr>
+                <tr><td><kbd>P</kbd></td><td>Pause</td></tr>
+                <tr><td><kbd>Esc</kbd></td><td>Quit</td></tr>
+            </tbody>
+        </table>
+
+        <h2>About</h2>
+        <p>
+            The game is a portable C++ port of Tetris using SDL2, SDL2_image, SDL2_mixer and SDL2_ttf.
+            Emscripten compiles the same source tree that builds the desktop binary into a wasm module.
+        </p>
+        <p>
+            Latest release: <a href="https://github.com/calebe94/tetris/releases/latest" target="_blank" rel="noopener noreferrer">github.com/calebe94/tetris/releases</a>
+        </p>
+    </div>
+</body>
+</html>
