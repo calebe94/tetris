@@ -61,3 +61,11 @@ jobs:
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
           commit_message: "deploy: gh-pages from ${{ github.sha }}"
+
+      - name: Trigger Pages redeploy
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sleep 5
+          gh api -X POST /repos/${{ github.repository }}/pages/builds || echo "(redeploy trigger skipped — Pages may not be enabled yet)"
