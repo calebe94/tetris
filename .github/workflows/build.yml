@@ -5,67 +5,80 @@ on:
     tags:
       - '*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-
-      - name: Cache Dependencies
-        id: cache-deps
-        uses: actions/cache@v2
+        uses: actions/checkout@v4
         with:
-          path: /usr/include/SDL2
-          key: sdl-deps-${{ hashFiles('**/*.cpp', '**/*.h') }}
-          restore-keys: |
-            sdl-deps-
+          submodules: recursive
 
-      - name: Install Dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libsdl2-dev libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libsdl2-image-2.0-0
+          sudo apt-get install -y \
+            libsdl2-dev libsdl2-gfx-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev libsdl2-image-2.0-0
 
       - name: Install Emscripten SDK
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/emscripten-core/emsdk.git $HOME/emsdk
           cd $HOME/emsdk
           ./emsdk install latest
           ./emsdk activate latest
 
-      - name: Build Game
-        if: steps.cache-deps.outputs.cache-hit != 'true'
+      - name: Build desktop binary
+        run: make all
+
+      - name: Build wasm bundle
         run: |
           source $HOME/emsdk/emsdk_env.sh
-          make all
+          make web
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Release notes for ${{ github.ref }}
-          draft: false
-          prerelease: false
+      - name: Verify wasm artifacts
+        run: |
+          test -f wasm/index.html
+          test -f wasm/index.js
+          test -f wasm/index.wasm
+          test -f wasm/index.data
+          ls -la wasm/
 
-      - name: Compress wasm folder
+      - name: Copy wasm to docs/
+        run: |
+          mkdir -p docs/wasm
+          cp wasm/index.html  docs/wasm/index.html
+          cp wasm/index.js    docs/wasm/index.js
+          cp wasm/index.wasm  docs/wasm/index.wasm
+          cp wasm/index.data  docs/wasm/index.data
+
+      - name: Push wasm to main (triggers Pages redeploy)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/wasm/
+          if git diff --cached --quiet; then
+            echo "No wasm changes to push"
+          else
+            git commit -m "chore(pages): update wasm bundle for ${GITHUB_REF_NAME}"
+            git push origin main
+          fi
+
+      - name: Compress wasm folder for release
         run: tar czf wasm.tar.gz wasm
 
-      - name: Upload Game and wasm to Release
-        id: upload-assets
-        uses: softprops/action-gh-release@v1
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Release ${{ github.ref_name }}.
+            Play online: https://calebe94.github.io/tetris/
           files: |
             bin/tetris
             wasm.tar.gz
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release_id: ${{ steps.create_release.outputs.id }}
+          fail_on_unmatched_files: false
