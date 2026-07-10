@@ -7,32 +7,57 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # Job 1: caminho oficial (actions/deploy-pages) — funciona SE Pages
+  # estiver habilitado em Settings > Pages > Source: "GitHub Actions".
+  deploy-official:
+    if: false  # desabilitado por padrão; habilite após configurar source nas settings
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Job 2: caminho legacy (peaceiris/actions-gh-pages) — publica via push
+  # para branch `gh-pages`. Funciona SEM nenhuma config manual no repo.
+  # Para usar, abra https://github.com/calebe94/tetris/settings/pages,
+  # escolha Source: "Deploy from a branch" > Branch: gh-pages > / (root), Save.
+  deploy-legacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare gh-pages tree
+        run: |
+          # docs/ já é a raiz do site — copia direto
+          rm -rf _site
+          cp -r docs _site
+          # .nojekyll já está em docs/
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          keep_files: false
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: "deploy: gh-pages from ${{ github.sha }}"
