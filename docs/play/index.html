@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 Play Tetris</title>
+<meta name="description" content="Play Tetris in your browser. C++/SDL2 compiled to WebAssembly, served from the latest GitHub release.">
+<meta property="og:title" content="🎮 Play Tetris">
+<meta property="og:description" content="Classic Tetris in your browser. C++/SDL2 → WASM.">
+<style>
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #7d8590;
+    --accent: #e94560;
+    --accent-glow: rgba(233, 69, 96, 0.4);
+    --panel: #161b22;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  h1 { font-size: 2.2rem; margin: 0 0 8px; }
+  h2 { font-size: 1.4rem; margin: 32px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; margin: 24px 0 8px; }
+  a { color: #58a6ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  code { padding: 2px 6px; font-size: 0.9em; }
+  pre { padding: 12px; overflow-x: auto; }
+  pre code { border: 0; padding: 0; background: transparent; }
+  .lead { color: var(--muted); font-size: 1.05rem; margin: 0 0 24px; }
+  .play-block {
+    text-align: center;
+    margin: 24px 0 8px;
+  }
+  .play-button {
+    display: inline-block;
+    padding: 16px 36px;
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: pointer;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    font-family: inherit;
+    transition: transform 0.05s ease, box-shadow 0.15s ease;
+  }
+  .play-button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+  .play-button:active { transform: translateY(0); }
+  .game-wrap {
+    display: none;
+    margin: 24px 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #000;
+    overflow: hidden;
+  }
+  .game-wrap.is-open { display: block; }
+  .game-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 0.85em;
+    border-bottom: 1px solid var(--border);
+  }
+  .game-toolbar button {
+    background: #21262d;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .game-toolbar button:hover { background: #30363d; }
+  .game-frame {
+    width: 100%;
+    height: 80vh;
+    max-height: 800px;
+    border: 0;
+    display: block;
+    background: #000;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+  }
+  th { background: var(--panel); }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9em;
+  }
+  .nav a { color: #58a6ff; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>🎮 Play Tetris</h1>
+<p class="lead">Click <strong>Launch</strong> below — it streams the latest release from the cloud. No build, no install, no account. Just blocks.</p>
+
+<div class="play-block">
+  <button id="play-button" class="play-button" type="button">🎮 LAUNCH TETRIS 🎮</button>
+</div>
+
+<div id="game-wrap" class="game-wrap">
+  <div class="game-toolbar">
+    <span id="play-status">Loading…</span>
+    <button type="button" data-close>✕ Close</button>
+  </div>
+  <iframe id="game-frame" class="game-frame" title="Tetris" allow="autoplay" referrerpolicy="no-referrer"></iframe>
+</div>
+
+<h2>How to play</h2>
+<p>You control a stream of <strong>tetrominos</strong> — seven shapes made of four blocks each — that fall from the top of a 10-wide, 20-tall well. Slide and rotate them as they fall, slot them together to fill horizontal lines, and the lines vanish. The stack grows with every misfit. When it reaches the ceiling: game over.</p>
+
+<h3>Controls</h3>
+<table>
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><code>←</code></td><td>Move tetromino left</td></tr>
+    <tr><td><code>→</code></td><td>Move tetromino right</td></tr>
+    <tr><td><code>↓</code></td><td>Soft drop (faster fall)</td></tr>
+    <tr><td><code>↑</code> / <code>Space</code></td><td>Rotate tetromino</td></tr>
+    <tr><td><code>P</code></td><td>Pause / resume</td></tr>
+    <tr><td><code>Esc</code></td><td>Quit to launcher</td></tr>
+  </tbody>
+</table>
+<p>On mobile, the game canvas renders on-screen <strong>Rotate</strong>, <strong>Start / Pause</strong>, and <strong>Soft Drop</strong> buttons.</p>
+
+<h3>Scoring</h3>
+<ul>
+  <li><strong>1 line</strong> — 40 × level</li>
+  <li><strong>2 lines</strong> — 100 × level</li>
+  <li><strong>3 lines</strong> — 300 × level</li>
+  <li><strong>4 lines</strong> (Tetris) — 1200 × level</li>
+</ul>
+<p>Level increases every 10 lines. Drop speed increases with each level.</p>
+
+<h3>Tips</h3>
+<ul>
+  <li>Keep the stack <strong>flat</strong>. A bumpy surface is an invitation to lose a gap you can't reach.</li>
+  <li>Save the <strong>I-piece</strong> (long bar) for clearing four lines at once.</li>
+  <li>Don't panic. The hard-drop temptation is real; placing beats slamming.</li>
+</ul>
+
+<h2>Build it yourself</h2>
+<pre><code>git clone https://github.com/calebe94/tetris
+cd tetris
+git submodule update --init --recursive
+make all
+./bin/tetris</code></pre>
+<p>Desktop: needs <code>g++</code>, SDL2, SDL2_ttf, SDL2_mixer, SDL2_image. Web build: needs Emscripten SDK → <code>make web</code>.</p>
+
+<div class="nav">
+  <a href="https://calebe94.github.io/tetris/">← Back to project</a>
+  <a href="https://github.com/calebe94/tetris">Source on GitHub →</a>
+</div>
+
+</main>
+
+<script>
+(function () {
+  var REPO = 'calebe94/tetris';
+  var API = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+  var CACHE = 'tetris-release-sha';
+  var BTN = document.getElementById('play-button');
+  var WRAP = document.getElementById('game-wrap');
+  var FRAME = document.getElementById('game-frame');
+  var STATUS = document.getElementById('play-status');
+
+  function closeGame() {
+    WRAP.classList.remove('is-open');
+    FRAME.removeAttribute('src');
+    BTN.style.display = 'inline-block';
+    STATUS.textContent = 'Closed.';
+  }
+
+  function openGame() {
+    BTN.style.display = 'none';
+    WRAP.classList.add('is-open');
+    STATUS.textContent = 'Resolving latest release…';
+    var cached = null;
+    try {
+      cached = JSON.parse(sessionStorage.getItem(CACHE) || 'null');
+    } catch (_) {}
+    var fetchRelease = (cached && Date.now() - cached.at < 10 * 60 * 1000)
+      ? Promise.resolve(cached.data)
+      : fetch(API, { headers: { 'Accept': 'application/vnd.github+json' } })
+          .then(function (r) {
+            if (!r.ok) throw new Error('Release API ' + r.status);
+            return r.json();
+          })
+          .then(function (j) {
+            try { sessionStorage.setItem(CACHE, JSON.stringify({ data: j, at: Date.now() })); } catch (_) {}
+            return j;
+          });
+    fetchRelease
+      .then(function (release) {
+        // Use commit SHA for jsDelivr (immutable, sync-immediate)
+        var sha = release.target_commitish;
+        var tag = release.tag_name;
+        var url = 'https://cdn.jsdelivr.net/gh/' + REPO + '@' + sha + '/wasm/index.html';
+        FRAME.src = url;
+        STATUS.textContent = 'Playing release ' + tag + ' (' + sha.substring(0, 7) + ')';
+      })
+      .catch(function (err) {
+        STATUS.textContent = 'Could not resolve latest release: ' + err.message + ' — falling back to main.';
+        FRAME.src = 'https://cdn.jsdelivr.net/gh/' + REPO + '@main/wasm/index.html';
+      });
+  }
+
+  BTN.addEventListener('click', openGame);
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.matches && e.target.matches('[data-close]')) closeGame();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && WRAP.classList.contains('is-open')) closeGame();
+  });
+})();
+</script>
+</body>
+</html>
