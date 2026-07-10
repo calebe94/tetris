@@ -72,9 +72,6 @@ jobs:
           # docs/ já é a raiz do site — copia direto
           rm -rf _site
           cp -r docs _site
-          # Keep play.html at repo root in sync with docs/play/index.html
-          mkdir -p _site/play
-          cp play.html _site/play/index.html
           # .nojekyll já está em docs/
 
       - name: Deploy to gh-pages branch

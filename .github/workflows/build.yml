@@ -55,22 +55,15 @@ jobs:
           cp wasm/index.wasm  docs/wasm/index.wasm
           cp wasm/index.data  docs/wasm/index.data
 
-      - name: Copy play page to docs/
-        run: |
-          mkdir -p docs/play
-          cp play.html docs/play/index.html
-          echo "Play page copied:"
-          ls -la docs/play/
-
-      - name: Push wasm and play page to main (triggers Pages redeploy)
+      - name: Push wasm to main (triggers Pages redeploy)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/wasm/ docs/play/
+          git add docs/wasm/
           if git diff --cached --quiet; then
-            echo "No docs changes to push"
+            echo "No wasm changes to push"
           else
-            git commit -m "chore(pages): update wasm bundle and play page for ${GITHUB_REF_NAME}"
+            git commit -m "chore(pages): update wasm bundle for ${GITHUB_REF_NAME}"
             git push origin main
           fi
 
