@@ -44,10 +44,13 @@ compile: ${OUTPUT_DIR}
 run: compile
 	$(BIN)
 
-all: compile web
-
 web: $(OUTPUT_DIR)
 	$(EMCC) $(EMFLAGS) $(SOURCE) --shell-file wasm/.shell.html $(EMINCLUDE_PATH) $(EMLIBS) $(MACROS) -o $(BIN_HTML)
+
+all: compile
+
+# historical: 'all' used to chain 'web' (compile + emcc wasm). Split so the
+# workflow can build desktop and web independently. Use 'make web' for wasm.
 
 clean:
 	rm -fr ${OUTPUT_DIR} wasm/index.js wasm/index.html wasm/index.wasm wasm/index.data
