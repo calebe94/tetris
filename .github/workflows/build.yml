@@ -55,8 +55,11 @@ jobs:
           if git diff --cached --quiet; then
             echo "No wasm changes to push"
           else
+            # actions/checkout@v4 checks out the tag as a detached HEAD, so
+            # 'main' is not a local ref. Push the current commit explicitly to
+            # the main branch on the remote.
             git commit -m "chore(pages): ship wasm bundle for ${GITHUB_REF_NAME}"
-            git push origin main
+            git push origin HEAD:refs/heads/main
           fi
 
       - name: Compress wasm folder for release
