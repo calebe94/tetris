@@ -48,10 +48,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Tenta habilitar Pages. Ignora erro se já estiver habilitado (409) ou se a config já existir.
-          HTTP_CODE=$(gh api -X POST /repos/${{ github.repository }}/pages \
-            -f source[branch]=gh-pages \
-            -f source[path]=/ \
-            -o /dev/null -s -w "%{http_code}" || true)
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/pages \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' || true)
           echo "Pages enable response: $HTTP_CODE"
           if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "409" ] || [ "$HTTP_CODE" = "422" ]; then
             echo "Pages enabled or already configured"
