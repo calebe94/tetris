@@ -31,7 +31,5 @@
 *.out
 *.app
 bin/
-wasm/index.data
-wasm/index.html
-wasm/index.js
-wasm/index.wasm
+# wasm/index.{html,js,wasm,data} are tracked: shipped to repo root on every release tag
+# so GitHub Pages can serve the game at /tetris/wasm/. See .github/workflows/build.yml.

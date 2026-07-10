@@ -47,7 +47,7 @@ run: compile
 all: compile web
 
 web: $(OUTPUT_DIR)
-	$(EMCC) $(EMFLAGS) $(SOURCE) --shell-file wasm/index_shell.html $(EMINCLUDE_PATH) $(EMLIBS) $(MACROS) -o $(BIN_HTML)
+	$(EMCC) $(EMFLAGS) $(SOURCE) --shell-file wasm/.shell.html $(EMINCLUDE_PATH) $(EMLIBS) $(MACROS) -o $(BIN_HTML)
 
 clean:
 	rm -fr ${OUTPUT_DIR} wasm/index.js wasm/index.html wasm/index.wasm wasm/index.data

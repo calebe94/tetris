@@ -47,23 +47,15 @@ jobs:
           test -f wasm/index.data
           ls -la wasm/
 
-      - name: Copy wasm to docs/
-        run: |
-          mkdir -p docs/wasm
-          cp wasm/index.html  docs/wasm/index.html
-          cp wasm/index.js    docs/wasm/index.js
-          cp wasm/index.wasm  docs/wasm/index.wasm
-          cp wasm/index.data  docs/wasm/index.data
-
-      - name: Push wasm to main (triggers Pages redeploy)
+      - name: Ship wasm to repo root (so GitHub Pages serves /tetris/wasm/)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/wasm/
+          git add wasm/index.html wasm/index.js wasm/index.wasm wasm/index.data
           if git diff --cached --quiet; then
             echo "No wasm changes to push"
           else
-            git commit -m "chore(pages): update wasm bundle for ${GITHUB_REF_NAME}"
+            git commit -m "chore(pages): ship wasm bundle for ${GITHUB_REF_NAME}"
             git push origin main
           fi
 
@@ -77,7 +69,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: |
             Release ${{ github.ref_name }}.
-            Play online: https://calebe94.github.io/tetris/
+            Play online: https://calebe94.github.io/tetris/play.html
           files: |
             bin/tetris
             wasm.tar.gz
@@ -85,4 +77,3 @@ jobs:
             wasm/index.js
             wasm/index.wasm
             wasm/index.data
-          fail_on_unmatched_files: false
