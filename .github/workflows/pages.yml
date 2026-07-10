@@ -43,6 +43,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Try to enable Pages (idempotent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Tenta habilitar Pages. Ignora erro se já estiver habilitado (409) ou se a config já existir.
+          HTTP_CODE=$(gh api -X POST /repos/${{ github.repository }}/pages \
+            -f source[branch]=gh-pages \
+            -f source[path]=/ \
+            -o /dev/null -s -w "%{http_code}" || true)
+          echo "Pages enable response: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "409" ] || [ "$HTTP_CODE" = "422" ]; then
+            echo "Pages enabled or already configured"
+          else
+            echo "::warning::Unexpected status: $HTTP_CODE. Continuing anyway."
+          fi
+
       - name: Prepare gh-pages tree
         run: |
           # docs/ já é a raiz do site — copia direto
