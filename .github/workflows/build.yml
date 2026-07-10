@@ -81,4 +81,8 @@ jobs:
           files: |
             bin/tetris
             wasm.tar.gz
+            wasm/index.html
+            wasm/index.js
+            wasm/index.wasm
+            wasm/index.data
           fail_on_unmatched_files: false
