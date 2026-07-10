@@ -10,18 +10,126 @@ The main objective of this project is to provide a fun and interactive way to pl
 
 ## 🎮 [Try it online! 🌐](https://calebe94.github.io/tetris/#play)
 
-<a href="#play" id="play-button" onclick="document.getElementById('play-overlay').style.display='flex'; return false;" style="display:inline-block;padding:16px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:1.2em;box-shadow:0 4px 12px rgba(233,69,96,0.4);">🎮 JOGAR TETRIS AGORA 🎮</a>
+<a href="#play" id="play-button" style="display:inline-block;padding:16px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:1.2em;box-shadow:0 4px 12px rgba(233,69,96,0.4);">🎮 JOGAR TETRIS AGORA 🎮</a>
 
-<div id="play-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px;box-sizing:border-box;">
-  <div style="width:100%;max-width:600px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h2 style="color:#fff;margin:0;">🎮 Tetris</h2>
-    <button onclick="document.getElementById('play-overlay').style.display='none'" style="background:#e94560;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:1em;">✕ Fechar</button>
+<div id="play-overlay" role="dialog" aria-label="Tetris game">
+  <div class="play-header">
+    <h2>🎮 Tetris</h2>
+    <button type="button" data-close>✕ Fechar</button>
   </div>
-  <iframe src="https://cdn.jsdelivr.net/gh/calebe94/tetris@gh-pages/wasm/index.html" style="width:100%;max-width:600px;height:80vh;max-height:800px;border:1px solid #333;border-radius:8px;background:#000;" allow="autoplay" allowfullscreen></iframe>
-  <p style="color:#888;font-size:0.85em;margin-top:12px;">Controles: ← → mover | ↑ / Space rotacionar | ↓ descer | P pausar</p>
+  <iframe id="game-frame" title="Tetris" allow="autoplay" referrerpolicy="no-referrer"></iframe>
+  <p class="play-hint">Controles: ← → mover | ↑ / Space rotacionar | ↓ descer | P pausar</p>
+  <p id="play-status"></p>
 </div>
 
 </div>
+
+<style>
+  #play-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  #play-overlay.is-open { display: flex; }
+  #play-overlay .play-header {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  #play-overlay .play-header h2 { margin: 0; }
+  #play-overlay .play-header button {
+    background: #e94560;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  #play-overlay iframe {
+    width: 100%;
+    max-width: 600px;
+    height: 80vh;
+    max-height: 800px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #000;
+  }
+  #play-overlay .play-hint { color: #888; font-size: 0.85em; margin-top: 12px; }
+  #play-status { color: #888; font-size: 0.75em; margin-top: 4px; }
+</style>
+
+<script>
+(function () {
+  var REPO = 'calebe94/tetris';
+  var API = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+  var CACHE = 'tetris-release-sha';
+  var STATUS = document.getElementById('play-status');
+  var FRAME = document.getElementById('game-frame');
+  var OPEN = document.getElementById('play-overlay');
+  var BTN = document.getElementById('play-button');
+
+  function closeGame() {
+    OPEN.classList.remove('is-open');
+    FRAME.removeAttribute('src');
+  }
+
+  OPEN.addEventListener('click', function (e) {
+    if (e.target === OPEN || e.target.matches('[data-close]')) closeGame();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeGame();
+  });
+
+  function getRelease() {
+    try {
+      var cached = JSON.parse(sessionStorage.getItem(CACHE) || 'null');
+      if (cached && Date.now() - cached.at < 10 * 60 * 1000) return Promise.resolve(cached.data);
+    } catch (_) {}
+    return fetch(API, { headers: { 'Accept': 'application/vnd.github+json' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('Release API ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        sessionStorage.setItem(CACHE, JSON.stringify({ data: j, at: Date.now() }));
+        return j;
+      });
+  }
+
+  function openGame(ev) {
+    if (ev) ev.preventDefault();
+    OPEN.classList.add('is-open');
+    STATUS.textContent = 'Resolving latest release…';
+    getRelease()
+      .then(function (release) {
+        // Use commit SHA for jsDelivr (immutable, sync-immediate)
+        var sha = release.target_commitish;
+        var tag = release.tag_name;
+        var url = 'https://cdn.jsdelivr.net/gh/' + REPO + '@' + sha + '/wasm/index.html';
+        FRAME.src = url;
+        STATUS.textContent = 'Playing release ' + tag + ' (' + sha.substring(0, 7) + ')';
+      })
+      .catch(function (err) {
+        STATUS.textContent = 'Could not resolve latest release: ' + err.message + ' — falling back to main.';
+        FRAME.src = 'https://cdn.jsdelivr.net/gh/' + REPO + '@main/wasm/index.html';
+      });
+  }
+
+  BTN.addEventListener('click', openGame);
+})();
+</script>
 
 ## Features
 
