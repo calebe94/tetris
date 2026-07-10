@@ -6,7 +6,22 @@ The main objective of this project is to provide a fun and interactive way to pl
 
 <img src="./assets/screenshots/game.png" width="400px">
 
-[🌐 Try it online! 🎮](https://blog.calebe.dev.br/tetris/)
+<div align="center">
+
+## 🎮 [Try it online! 🌐](https://calebe94.github.io/tetris/#play)
+
+<a href="#play" id="play-button" onclick="document.getElementById('play-overlay').style.display='flex'; return false;" style="display:inline-block;padding:16px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:1.2em;box-shadow:0 4px 12px rgba(233,69,96,0.4);">🎮 JOGAR TETRIS AGORA 🎮</a>
+
+<div id="play-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px;box-sizing:border-box;">
+  <div style="width:100%;max-width:600px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 style="color:#fff;margin:0;">🎮 Tetris</h2>
+    <button onclick="document.getElementById('play-overlay').style.display='none'" style="background:#e94560;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:1em;">✕ Fechar</button>
+  </div>
+  <iframe src="https://cdn.jsdelivr.net/gh/calebe94/tetris@gh-pages/wasm/index.html" style="width:100%;max-width:600px;height:80vh;max-height:800px;border:1px solid #333;border-radius:8px;background:#000;" allow="autoplay" allowfullscreen></iframe>
+  <p style="color:#888;font-size:0.85em;margin-top:12px;">Controles: ← → mover | ↑ / Space rotacionar | ↓ descer | P pausar</p>
+</div>
+
+</div>
 
 ## Features
 
