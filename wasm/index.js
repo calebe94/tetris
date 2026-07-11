@@ -1049,7 +1049,12 @@ async function createWasm() {
   
       // When using conditional TextDecoder, skip it for short strings as the overhead of the native call is not worth it.
       if (endPtr - idx > 16 && heapOrArray.buffer && UTF8Decoder) {
-        return UTF8Decoder.decode(heapOrArray.subarray(idx, endPtr));
+        // Copy into a fixed-size buffer: TextDecoder.decode() rejects views
+        // onto a resizable ArrayBuffer, and emscripten uses a growable
+        // wasm memory so HEAPU8's underlying buffer is resizable. The
+        // Uint8Array constructor with a typed-array source copies the
+        // bytes into a fresh, fixed-size buffer.
+        return UTF8Decoder.decode(new Uint8Array(heapOrArray.subarray(idx, endPtr)));
       }
       var str = '';
       while (idx < endPtr) {

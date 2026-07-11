@@ -193,6 +193,24 @@
             },
         };
         Module.setStatus('Downloading...');
+        // Patch TextDecoder.decode to copy resizable ArrayBuffer views into a
+        // fixed-size buffer before decoding. emscripten's HEAPU8 is a view onto
+        // a growable wasm memory buffer, and modern Chrome (130+) rejects
+        // TextDecoder.decode() on resizable ArrayBuffer views. This emscripten
+        // bug bites _emscripten_glShaderSource and breaks the game at startup.
+        // Patching the prototype here (before {{{ SCRIPT }}} loads) means the
+        // fix survives `make web` rebuilds.
+        (function () {
+          var origDecode = TextDecoder.prototype.decode;
+          TextDecoder.prototype.decode = function (input, options) {
+            if (input && input.buffer && input.buffer.resizable) {
+              var copy = new Uint8Array(input.byteLength);
+              for (var i = 0; i < input.byteLength; i++) copy[i] = input[i];
+              return origDecode.call(this, copy, options);
+            }
+            return origDecode.call(this, input, options);
+          };
+        })();
         window.onerror = function () {
             Module.setStatus('Exception thrown, see JavaScript console');
             spinnerElement.style.display = 'none';
