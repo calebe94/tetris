@@ -4,9 +4,10 @@ This project is a classic implementation of the popular game Tetris, written in 
 
 The main objective of this project is to provide a fun and interactive way to play the timeless game of Tetris, while also serving as a practical example of using the SDL2 library for game development in C++.
 
-<img src="./assets/screenshots/game.png" width="400px">
 
 <div align="center">
+
+<img src="./assets/screenshots/game.png" width="400px">
 
 <a href="https://calebe94.github.io/tetris/play.html" style="display:inline-block;padding:16px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:1.2em;box-shadow:0 4px 12px rgba(233,69,96,0.4);">🎮 Try it online! 🌐</a>
 
