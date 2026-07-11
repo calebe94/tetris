@@ -72,7 +72,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: |
             Release ${{ github.ref_name }}.
-            Play online: https://calebe94.github.io/tetris/wasm/
+            Play online: https://calebe94.github.io/tetris/play.html
           files: |
             bin/tetris
             wasm.tar.gz
