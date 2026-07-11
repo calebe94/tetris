@@ -8,9 +8,7 @@ The main objective of this project is to provide a fun and interactive way to pl
 
 <div align="center">
 
-## 🎮 [Try it online! 🌐](https://calebe94.github.io/tetris/play.html)
-
-<a href="https://calebe94.github.io/tetris/play.html" style="display:inline-block;padding:16px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:1.2em;box-shadow:0 4px 12px rgba(233,69,96,0.4);">🎮 JOGAR TETRIS AGORA 🎮</a>
+<a href="https://calebe94.github.io/tetris/play.html" style="display:inline-block;padding:16px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:1.2em;box-shadow:0 4px 12px rgba(233,69,96,0.4);">🎮 Try it online! 🌐</a>
 
 </div>
 
