@@ -68,7 +68,14 @@ void TetrisGame::run()
     debug("Board dimensions: %ld %ld", gameBoard.size(), gameBoard[0].size());
 
     createBorders();
+#ifdef __EMSCRIPTEN__
+    // On the web build, skip the ImGui menu — it doesn't render reliably
+    // inside the emscripten canvas (SDL_GetWindowSize / font load), so
+    // boot straight into GAME state and let the user play.
+    GameStateManager::getInstance().transitionTo(GameState::GAME);
+#else
     GameStateManager::getInstance().transitionTo(GameState::MENU);
+#endif
 
     info("Game initialized!");
 
@@ -167,6 +174,17 @@ void TetrisGame::handleEvents()
                     break;
 
                 case SDLK_SPACE:
+#ifdef __EMSCRIPTEN__
+                    // On the web build, Space toggles pause (the wasm shell's
+                    // "Start / Pause" button dispatches Space key events).
+                    if (GameStateManager::getInstance().getCurrentState() == GameState::GAME) {
+                        GameStateManager::getInstance().transitionTo(GameState::PAUSED);
+                        info("Game status: Paused");
+                    } else if (GameStateManager::getInstance().getCurrentState() == GameState::PAUSED) {
+                        GameStateManager::getInstance().transitionTo(GameState::GAME);
+                        info("Game status: Resumed");
+                    }
+#endif
                     break;
             }
         }
