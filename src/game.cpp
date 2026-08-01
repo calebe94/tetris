@@ -36,10 +36,15 @@ void TetrisGame::loop()
         this->frameTime = SDL_GetTicks() - this->frameStart; // Calculate frame time
 
         // Limit frame rate
+        // On Emscripten/WASM, the main loop already runs at the browser's
+        // refresh rate via requestAnimationFrame — calling SDL_Delay here
+        // aborts the program because the build lacks ASYNCIFY support.
+#ifndef __EMSCRIPTEN__
         if (this->frameTime < FRAME_DELAY)
         {
             SDL_Delay(FRAME_DELAY - this->frameTime);
         }
+#endif
     }
 }
 
@@ -605,9 +610,11 @@ void TetrisGame::restartGame()
     playerScore.reset();
     placeTetromino();
     // Wait for the game over sound to finish before playing the main background sound again
+#ifndef __EMSCRIPTEN__
     while (Mix_Playing(0)) {
         SDL_Delay(100); // Adjust the delay time as needed
     }
+#endif
 
     // Play the main background sound again
     Mix_PlayChannel(-1, sound, -1);  // -1 for looping
