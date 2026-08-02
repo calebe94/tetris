@@ -71,6 +71,7 @@ private:
     bool checkGameOver();
 
     void restartGame();
+    void startGame();
 };
 
 #endif

@@ -25,27 +25,36 @@ TetrisGame::TetrisGame() :
 
 void TetrisGame::loop()
 {
-    if(!this->quit)
+    // Stop processing as soon as the user has requested an exit or the
+    // state machine reaches EXIT. On the web build also cancel the
+    // browser's requestAnimationFrame loop so no more callbacks fire.
+    if (this->quit || GameStateManager::getInstance().getCurrentState() == GameState::EXIT)
     {
-        this->frameStart = SDL_GetTicks(); // Get the current time
-
-        this->handleEvents();
-        this->update();
-        this->render();
-
-        this->frameTime = SDL_GetTicks() - this->frameStart; // Calculate frame time
-
-        // Limit frame rate
-        // On Emscripten/WASM, the main loop already runs at the browser's
-        // refresh rate via requestAnimationFrame — calling SDL_Delay here
-        // aborts the program because the build lacks ASYNCIFY support.
-#ifndef __EMSCRIPTEN__
-        if (this->frameTime < FRAME_DELAY)
-        {
-            SDL_Delay(FRAME_DELAY - this->frameTime);
-        }
+        Mix_HaltChannel(-1);
+#ifdef __EMSCRIPTEN__
+        emscripten_cancel_main_loop();
 #endif
+        return;
     }
+
+    this->frameStart = SDL_GetTicks(); // Get the current time
+
+    this->handleEvents();
+    this->update();
+    this->render();
+
+    this->frameTime = SDL_GetTicks() - this->frameStart; // Calculate frame time
+
+    // Limit frame rate
+    // On Emscripten/WASM, the main loop already runs at the browser's
+    // refresh rate via requestAnimationFrame — calling SDL_Delay here
+    // aborts the program because the build lacks ASYNCIFY support.
+#ifndef __EMSCRIPTEN__
+    if (this->frameTime < FRAME_DELAY)
+    {
+        SDL_Delay(FRAME_DELAY - this->frameTime);
+    }
+#endif
 }
 
 bool TetrisGame::isRunning()
@@ -73,20 +82,12 @@ void TetrisGame::run()
     debug("Board dimensions: %ld %ld", gameBoard.size(), gameBoard[0].size());
 
     createBorders();
-#ifdef __EMSCRIPTEN__
-    // On the web build, skip the ImGui menu — it doesn't render reliably
-    // inside the emscripten canvas (SDL_GetWindowSize / font load), so
-    // boot straight into GAME state and let the user play.
-    GameStateManager::getInstance().transitionTo(GameState::GAME);
-#else
     GameStateManager::getInstance().transitionTo(GameState::MENU);
-#endif
 
     info("Game initialized!");
 
     clearBoard();
     createBorders();
-    placeTetromino();
 }
 
 void TetrisGame::initializeGame()
@@ -111,12 +112,8 @@ void TetrisGame::initializeGame()
         // Handle loading error
         error("Game Over sound file not found!");
     }
-    // Set the sound to loop infinitely (-1) and play it
-    Mix_PlayChannel(-1, sound, -1);  // -1 for looping
-
     // Set initial volume (0 to 128, where 128 is max volume)
     Mix_Volume(-1, MIX_MAX_VOLUME / 2);  // Adjust the volume level as needed
-    // placeTetromino();
 }
 
 void TetrisGame::handleEvents()
@@ -126,6 +123,7 @@ void TetrisGame::handleEvents()
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT)
         {
+            Mix_HaltChannel(-1);
             tetrisUI.setQuit(true);
             this->quit = true;
         }
@@ -169,28 +167,35 @@ void TetrisGame::handleEvents()
                     break;
 
                 case SDLK_ESCAPE:
-                    pause = !pause;
-                    if(GameStateManager::getInstance().getCurrentState() == GameState::GAME)
-                        GameStateManager::getInstance().transitionTo(GameState::PAUSED);
-                    else if(GameStateManager::getInstance().getCurrentState() == GameState::PAUSED)
-                        GameStateManager::getInstance().transitionTo(GameState::GAME);
-                    info("Game status: %s", pause?"Paused":"Resumed");
-                    tetrisUI.ToggleMenu();
-                    break;
-
+                case SDLK_p:
                 case SDLK_SPACE:
-#ifdef __EMSCRIPTEN__
-                    // On the web build, Space toggles pause (the wasm shell's
-                    // "Start / Pause" button dispatches Space key events).
-                    if (GameStateManager::getInstance().getCurrentState() == GameState::GAME) {
+                {
+                    GameState current = GameStateManager::getInstance().getCurrentState();
+                    if (current == GameState::GAME)
+                    {
+                        pause = true;
                         GameStateManager::getInstance().transitionTo(GameState::PAUSED);
+                        Mix_Pause(-1);
                         info("Game status: Paused");
-                    } else if (GameStateManager::getInstance().getCurrentState() == GameState::PAUSED) {
-                        GameStateManager::getInstance().transitionTo(GameState::GAME);
-                        info("Game status: Resumed");
+                        tetrisUI.ToggleMenu();
                     }
-#endif
+                    else if (current == GameState::PAUSED)
+                    {
+                        pause = false;
+                        GameStateManager::getInstance().transitionTo(GameState::GAME);
+                        Mix_Resume(-1);
+                        info("Game status: Resumed");
+                        tetrisUI.ToggleMenu();
+                    }
+                    else if (current == GameState::MENU || current == GameState::GAME_OVER)
+                    {
+                        pause = false;
+                        GameStateManager::getInstance().transitionTo(GameState::GAME);
+                        Mix_Resume(-1);
+                        info("Game status: Started");
+                    }
                     break;
+                }
             }
         }
     }
@@ -198,13 +203,47 @@ void TetrisGame::handleEvents()
 
 void TetrisGame::update()
 {
-    if (GameStateManager::getInstance().getCurrentState() == GameState::GAME)
+    GameState current = GameStateManager::getInstance().getCurrentState();
+    static GameState previousState = GameState::MENU;
+
+    if (previousState != current)
+    {
+        if (current == GameState::PAUSED)
+        {
+            Mix_Pause(-1);
+        }
+        else if (current == GameState::GAME)
+        {
+            // Start or resume background music, and reset the board when
+            // beginning a fresh game from the menu or game-over screen.
+            if (previousState == GameState::MENU || previousState == GameState::GAME_OVER)
+            {
+                startGame();
+                if (!Mix_Playing(-1))
+                {
+                    Mix_PlayChannel(-1, sound, -1);
+                }
+                else
+                {
+                    Mix_Resume(-1);
+                }
+            }
+            else
+            {
+                Mix_Resume(-1);
+            }
+        }
+        else if (current == GameState::EXIT)
+        {
+            Mix_HaltChannel(-1);
+            this->quit = true;
+        }
+        previousState = current;
+    }
+
+    if (current == GameState::GAME)
     {
         tickGame();
-    }
-    if(GameStateManager::getInstance().getCurrentState() == GameState::EXIT)
-    {
-        this->quit = true;
     }
 }
 
@@ -609,15 +648,23 @@ void TetrisGame::restartGame()
     playerLevel.reset();
     playerScore.reset();
     placeTetromino();
-    // Wait for the game over sound to finish before playing the main background sound again
-#ifndef __EMSCRIPTEN__
-    while (Mix_Playing(0)) {
-        SDL_Delay(100); // Adjust the delay time as needed
-    }
-#endif
 
-    // Play the main background sound again
-    Mix_PlayChannel(-1, sound, -1);  // -1 for looping
+    // Resume the background music (it was halted by the game-over sequence)
+    Mix_Resume(-1);
+}
+
+void TetrisGame::startGame()
+{
+    clearBoard();
+    createBorders();
+    displayGrid();
+    playerLevel.reset();
+    playerScore.reset();
+    placeTetromino();
+    tetrisUI.setPlayerScore(0);
+    tetrisUI.setPlayerLevel(1);
+    lastTime = SDL_GetTicks();
+    info("New game started");
 }
 
 TetrisGame::~TetrisGame()
