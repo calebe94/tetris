@@ -213,11 +213,13 @@
         Module.postRun.push(function () {
             Array.from(document.querySelectorAll('.controls')).forEach(
                 function (control) {
-                    if ('ontouchstart' in document.documentElement) {
+                    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
                         control.addEventListener('touchstart', function (event) {
+                            event.preventDefault(); // Prevent emulated mouse events
                             create_and_fire_event(event, 'keydown');
                         });
                         control.addEventListener('touchend', function (event) {
+                            event.preventDefault(); // Prevent emulated mouse events
                             create_and_fire_event(event, 'keyup');
                         });
                     } else {
