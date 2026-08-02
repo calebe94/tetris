@@ -9,7 +9,7 @@ Graphics::Graphics() :
 bool Graphics::init() {
     bool success = true;
 
-    if(SDL_Init(SDL_INIT_VIDEO) != 0)
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
     {
         error("SDL unable to initialize! SDL Error: %s", SDL_GetError());
         success = false;

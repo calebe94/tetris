@@ -7,12 +7,13 @@
 CC=g++
 TITLE=tetris
 SOURCE=$(wildcard src/*.cpp)
-SDL2_FLAGS=`$$(which sdl2-config) --cflags --libs`
+SDL2_FLAGS=$(shell sdl2-config --cflags --libs)
 INCLUDE_PATH=-Isrc/
 INCLUDE_PATH+=-Ilib/seethe/
+INCLUDE_PATH+=-Ilib/imgui/
+INCLUDE_PATH+=-Ilib/imgui/backends/
+INCLUDE_PATH+=-I/opt/homebrew/include
 DEAR_IMGUI_DIR=lib/imgui/
-INCLUDE_PATH+=-I${DEAR_IMGUI_DIR}
-INCLUDE_PATH+=-I${DEAR_IMGUI_DIR}/backends/
 DEAR_IMGUI_SOURCES=$(wildcard ${DEAR_IMGUI_DIR}*.cpp)
 DEAR_IMGUI_SOURCES+=${DEAR_IMGUI_DIR}backends/imgui_impl_sdl2.cpp
 DEAR_IMGUI_SOURCES+=${DEAR_IMGUI_DIR}backends/imgui_impl_sdlrenderer2.cpp

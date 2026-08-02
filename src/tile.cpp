@@ -2,7 +2,7 @@
 #include <emscripten.h>
 #include <SDL.h>
 #else
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #endif
 
 #include "tile.h"

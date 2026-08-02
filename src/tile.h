@@ -1,6 +1,6 @@
 #ifndef _TILE_H_
 #define _TILE_H_
-#include "SDL2/SDL.h"
+#include "SDL.h"
 #include "colors.h"
 
 #define TILE_SIZE 32
