@@ -10,12 +10,20 @@
     <meta property="og:type" content="website" />
     <title>🎮 Tetris</title>
     <style>
+        :root {
+            --bg: #151515;
+            --fg: #fafafa;
+            --muted: #c8c8c8;
+            --accent: #2ecc40;
+            --panel: #2a2a2a;
+            --border: #555555;
+        }
         html, body {
             margin: 0;
             padding: 0;
-            background: #111;
-            color: #eee;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: "Courier Prime", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             -ms-user-select: none;
             -moz-user-select: none;
             -webkit-user-select: none;
@@ -30,12 +38,12 @@
         header {
             width: 100%;
             padding: 12px 20px;
-            background: #1c1c1c;
-            border-bottom: 1px solid #333;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
             text-align: center;
         }
         header h1 { margin: 0; font-size: 1.4rem; }
-        header a { color: #7cc; text-decoration: none; margin-left: 12px; }
+        header a { color: var(--accent); text-decoration: none; margin-left: 12px; }
         main {
             flex: 1;
             width: 100%;
@@ -49,17 +57,18 @@
         .emscripten { display: block; margin: 0 auto; }
         .controller { margin: 12px auto; text-align: center; }
         .controls {
+            font-family: inherit;
             font-size: 1.1rem;
             min-height: 36px;
             margin: 4px 0;
             width: 100%;
-            background: #222;
-            color: #eee;
-            border: 1px solid #444;
+            background: var(--panel);
+            color: var(--fg);
+            border: 1px solid var(--border);
             border-radius: 4px;
             padding: 6px 12px;
         }
-        .controls:active { background: #333; }
+        .controls:active { background: var(--border); }
         .spinner {
             height: 50px; width: 50px;
             margin: 24px auto;
@@ -81,10 +90,10 @@
             padding: 12px;
             text-align: center;
             font-size: 0.85rem;
-            color: #888;
-            border-top: 1px solid #333;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
         }
-        footer a { color: #7cc; text-decoration: none; }
+        footer a { color: var(--accent); text-decoration: none; }
     </style>
 </head>
 <body>
@@ -193,6 +202,24 @@
             },
         };
         Module.setStatus('Downloading...');
+        // Patch TextDecoder.decode to copy resizable ArrayBuffer views into a
+        // fixed-size buffer before decoding. emscripten's HEAPU8 is a view onto
+        // a growable wasm memory buffer, and modern Chrome (130+) rejects
+        // TextDecoder.decode() on resizable ArrayBuffer views. This emscripten
+        // bug bites _emscripten_glShaderSource and breaks the game at startup.
+        // Patching the prototype here (before <script async type="text/javascript" src="index.js"></script> loads) means the
+        // fix survives `make web` rebuilds.
+        (function () {
+          var origDecode = TextDecoder.prototype.decode;
+          TextDecoder.prototype.decode = function (input, options) {
+            if (input && input.buffer && input.buffer.resizable) {
+              var copy = new Uint8Array(input.byteLength);
+              for (var i = 0; i < input.byteLength; i++) copy[i] = input[i];
+              return origDecode.call(this, copy, options);
+            }
+            return origDecode.call(this, input, options);
+          };
+        })();
         window.onerror = function () {
             Module.setStatus('Exception thrown, see JavaScript console');
             spinnerElement.style.display = 'none';
